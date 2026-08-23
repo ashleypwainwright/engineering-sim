@@ -6,6 +6,7 @@
     <title>Engineering Sim</title>
     
     <script>
+        // Global Error Catcher for unforeseen crashes
         window.onerror = function(msg, url, line) {
             alert("CRASH ON LINE " + line + ":\n" + msg);
             return true; 
@@ -17,9 +18,13 @@
         .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
         input, textarea, button { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; }
         button { background: #0066cc; color: white; border: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
         .progress-bar-bg { background: #e0e0e0; height: 20px; width: 100%; margin-top: 5px; }
         .progress-bar-fill { background: #28a745; height: 100%; width: 0%; color: white; text-align: right; font-size: 12px; }
         #scenario-text { font-style: italic; background: #f9f9f9; padding: 15px; margin: 20px 0; border-left: 4px solid #0066cc; }
+        
+        /* New loading indicator style */
+        .loading { display: none; text-align: center; color: #0066cc; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -38,7 +43,8 @@
         <input type="text" id="aim2Desc" value="Reduce components > 1.6Ra by 10%">
         <label>Aim 3:</label>
         <input type="text" id="aim3Desc" value="Reduce time due to regrinding to 0%">
-        <button onclick="startSimulation()">Start Simulation</button>
+        <button id="start-btn" onclick="startSimulation()">Start Simulation</button>
+        <div id="setup-loading" class="loading">Connecting to workshop AI...</div>
     </div>
 
     <div id="sim-screen" class="card" style="display:none;">
@@ -48,60 +54,123 @@
         <label id="lbl-aim3">Aim 3</label><div class="progress-bar-bg"><div id="bar-aim3" class="progress-bar-fill">0%</div></div>
         <div id="scenario-text">Starting...</div>
         <textarea id="user-decision" placeholder="Your action..."></textarea>
-        <button onclick="submitDecision()">Execute Decision</button>
+        <button id="execute-btn" onclick="submitDecision()">Execute Decision</button>
+        <div id="sim-loading" class="loading">Simulating workshop feedback...</div>
     </div>
 
     <script>
         let day = 1; let pTitle, pSolution, a1, a2, a3, key; let historyContext = "";
 
-        function startSimulation() {
-            key = document.getElementById('apiKey').value;
-            if (!key) { alert("Please enter your API key."); return; }
-            pTitle = document.getElementById('projectTitle').value;
-            pSolution = document.getElementById('solution').value;
-            a1 = document.getElementById('aim1Desc').value;
-            a2 = document.getElementById('aim2Desc').value;
-            a3 = document.getElementById('aim3Desc').value;
-            document.getElementById('lbl-aim1').innerText = a1;
-            document.getElementById('lbl-aim2').innerText = a2;
-            document.getElementById('lbl-aim3').innerText = a3;
-            document.getElementById('setup-screen').style.display = 'none';
-            document.getElementById('sim-screen').style.display = 'block';
-            callAI("This is Day 1. Generate the first baseline scenario.");
+        // Standard function to enable/disable buttons and show loading text
+        function toggleLoading(isLoading) {
+            document.getElementById('setup-loading').style.display = isLoading ? 'block' : 'none';
+            document.getElementById('sim-loading').style.display = isLoading ? 'block' : 'none';
+            document.getElementById('start-btn').disabled = isLoading;
+            document.getElementById('execute-btn').disabled = isLoading;
+            if (isLoading) {
+                document.getElementById('start-btn').innerText = "Working...";
+                document.getElementById('execute-btn').innerText = "Simulating...";
+            } else {
+                document.getElementById('start-btn').innerText = "Start Simulation";
+                document.getElementById('execute-btn').innerText = "Execute Decision";
+            }
+        }
+
+        async function startSimulation() {
+            try {
+                key = document.getElementById('apiKey').value;
+                if (!key) { alert("Please enter your API key."); return; }
+                
+                toggleLoading(true);
+
+                pTitle = document.getElementById('projectTitle').value;
+                pSolution = document.getElementById('solution').value;
+                a1 = document.getElementById('aim1Desc').value;
+                a2 = document.getElementById('aim2Desc').value;
+                a3 = document.getElementById('aim3Desc').value;
+                
+                document.getElementById('lbl-aim1').innerText = a1;
+                document.getElementById('lbl-aim2').innerText = a2;
+                document.getElementById('lbl-aim3').innerText = a3;
+                
+                document.getElementById('setup-screen').style.display = 'none';
+                document.getElementById('sim-screen').style.display = 'block';
+
+                await callAI("Initial baseline."); // Now awaited to catch errors
+            
+            } catch (error) {
+                alert("Setup failed to contact AI:\n" + error.message);
+                document.getElementById('setup-screen').style.display = 'block';
+                document.getElementById('sim-screen').style.display = 'none';
+            } finally {
+                toggleLoading(false);
+            }
         }
 
         async function submitDecision() {
-            const decision = document.getElementById('user-decision').value;
-            if (!decision) { alert("Please enter a decision first."); return; }
-            historyContext += "Day " + day + " decision: " + decision + ". ";
-            day++;
-            document.getElementById('day-counter').innerText = "Day " + day + " of 40";
-            await callAI(decision);
+            try {
+                const decisionInput = document.getElementById('user-decision');
+                const decision = decisionInput.value;
+                if (!decision) { alert("Please enter a decision first."); return; }
+                
+                toggleLoading(true);
+
+                historyContext += "Day " + day + " decision: " + decision + ". ";
+                day++;
+                document.getElementById('day-counter').innerText = "Day " + day + " of 40";
+                
+                await callAI(decision); // The network call is now properly awaited
+                
+                decisionInput.value = ""; // Only cleared if AI returns successfully
+            
+            } catch (error) {
+                alert("Simulation call failed:\n" + error.message);
+            } finally {
+                toggleLoading(false);
+            }
         }
 
         async function callAI(lastDecision) {
-            const prompt = 'Project: ' + pTitle + '. Solution: ' + pSolution + '. Aims: ' + a1 + ', ' + a2 + ', ' + a3 + '. History: ' + historyContext + ' Day: ' + day + ' of 40. Action: ' + lastDecision + '. Task: Evaluate action, generate 50-word scenario, output aim percentages (0-100). FORMAT STRICTLY AS JSON: {"scenario":"text","aim1_progress":10,"aim2_progress":5,"aim3_progress":0}';
+            const prompt = 'Project: ' + pTitle + '. Solution: ' + pSolution + '. Aims: ' + a1 + ', ' + a2 + ', ' + a3 + '. History: ' + historyContext + ' Day: ' + day + ' of 40. Action: ' + lastDecision + '. Task: Evaluate action, generate 80-word scenario, output aim percentages (0-100). FORMAT STRICTLY AS JSON: {"scenario":"text","aim1_progress":10,"aim2_progress":5,"aim3_progress":0}';
             
             const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + key;
             
+            // Step 1: Attempt the physical fetch (this handles network drops)
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
             
+            // Step 2: Check the HTTP status (this handles bad API keys/Google downtime)
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error("Gemini API Error (HTTP " + response.status + "): " + errorData.error.message);
+            }
+
             const data = await response.json();
-            let textResult = data.candidates[0].content.parts[0].text;
-            textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
-            const resultObj = JSON.parse(textResult);
             
-            document.getElementById('scenario-text').innerText = resultObj.scenario;
-            document.getElementById('bar-aim1').style.width = resultObj.aim1_progress + '%';
-            document.getElementById('bar-aim2').style.width = resultObj.aim2_progress + '%';
-            document.getElementById('bar-aim3').style.width = resultObj.aim3_progress + '%';
+            // Step 3: Handle JSON parsing with a dedicated catch
+            try {
+                let textResult = data.candidates[0].content.parts[0].text;
+                textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+                const resultObj = JSON.parse(textResult);
+                
+                // Step 4: Update UI ONLY if data parsed successfully
+                document.getElementById('scenario-text').innerText = resultObj.scenario;
+                document.getElementById('bar-aim1').style.width = resultObj.aim1_progress + '%';
+                document.getElementById('bar-aim1').innerText = resultObj.aim1_progress + '%';
+                document.getElementById('bar-aim2').style.width = resultObj.aim2_progress + '%';
+                document.getElementById('bar-aim2').innerText = resultObj.aim2_progress + '%';
+                document.getElementById('bar-aim3').style.width = resultObj.aim3_progress + '%';
+                document.getElementById('bar-aim3').innerText = resultObj.aim3_progress + '%';
+                
+            } catch (jsonError) {
+                throw new Error("Data Parsing Error:\nThe AI did not return valid project data.\n" + jsonError.message);
+            }
         }
 
-        alert("The engine is compiled and ready!");
+        // alert("Compiler check."); // Disabled now we know the compiler works
     </script>
 </body>
 </html>
