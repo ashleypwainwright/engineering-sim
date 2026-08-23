@@ -6,7 +6,6 @@
     <title>Engineering Sim</title>
     
     <script>
-        // Global Error Catcher for unforeseen crashes
         window.onerror = function(msg, url, line) {
             alert("CRASH ON LINE " + line + ":\n" + msg);
             return true; 
@@ -21,9 +20,7 @@
         button:disabled { background: #ccc; cursor: not-allowed; }
         .progress-bar-bg { background: #e0e0e0; height: 20px; width: 100%; margin-top: 5px; }
         .progress-bar-fill { background: #28a745; height: 100%; width: 0%; color: white; text-align: right; font-size: 12px; }
-        #scenario-text { font-style: italic; background: #f9f9f9; padding: 15px; margin: 20px 0; border-left: 4px solid #0066cc; }
-        
-        /* New loading indicator style */
+        #scenario-text { font-style: italic; background: #f9f9f9; padding: 15px; margin: 20px 0; border-left: 4px solid #0066cc; line-height: 1.5; }
         .loading { display: none; text-align: center; color: #0066cc; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
@@ -61,7 +58,6 @@
     <script>
         let day = 1; let pTitle, pSolution, a1, a2, a3, key; let historyContext = "";
 
-        // Standard function to enable/disable buttons and show loading text
         function toggleLoading(isLoading) {
             document.getElementById('setup-loading').style.display = isLoading ? 'block' : 'none';
             document.getElementById('sim-loading').style.display = isLoading ? 'block' : 'none';
@@ -96,7 +92,7 @@
                 document.getElementById('setup-screen').style.display = 'none';
                 document.getElementById('sim-screen').style.display = 'block';
 
-                await callAI("Initial baseline."); // Now awaited to catch errors
+                await callAI("Initial baseline."); 
             
             } catch (error) {
                 alert("Setup failed to contact AI:\n" + error.message);
@@ -119,9 +115,9 @@
                 day++;
                 document.getElementById('day-counter').innerText = "Day " + day + " of 40";
                 
-                await callAI(decision); // The network call is now properly awaited
+                await callAI(decision); 
                 
-                decisionInput.value = ""; // Only cleared if AI returns successfully
+                decisionInput.value = ""; 
             
             } catch (error) {
                 alert("Simulation call failed:\n" + error.message);
@@ -133,16 +129,15 @@
         async function callAI(lastDecision) {
             const prompt = 'Project: ' + pTitle + '. Solution: ' + pSolution + '. Aims: ' + a1 + ', ' + a2 + ', ' + a3 + '. History: ' + historyContext + ' Day: ' + day + ' of 40. Action: ' + lastDecision + '. Task: Evaluate action, generate 80-word scenario, output aim percentages (0-100). FORMAT STRICTLY AS JSON: {"scenario":"text","aim1_progress":10,"aim2_progress":5,"aim3_progress":0}';
             
-            const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + key;
+            // Note the new "-latest" tag added to the model name here
+            const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" + key;
             
-            // Step 1: Attempt the physical fetch (this handles network drops)
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
             
-            // Step 2: Check the HTTP status (this handles bad API keys/Google downtime)
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error("Gemini API Error (HTTP " + response.status + "): " + errorData.error.message);
@@ -150,13 +145,11 @@
 
             const data = await response.json();
             
-            // Step 3: Handle JSON parsing with a dedicated catch
             try {
                 let textResult = data.candidates[0].content.parts[0].text;
                 textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
                 const resultObj = JSON.parse(textResult);
                 
-                // Step 4: Update UI ONLY if data parsed successfully
                 document.getElementById('scenario-text').innerText = resultObj.scenario;
                 document.getElementById('bar-aim1').style.width = resultObj.aim1_progress + '%';
                 document.getElementById('bar-aim1').innerText = resultObj.aim1_progress + '%';
@@ -169,8 +162,6 @@
                 throw new Error("Data Parsing Error:\nThe AI did not return valid project data.\n" + jsonError.message);
             }
         }
-
-        // alert("Compiler check."); // Disabled now we know the compiler works
     </script>
 </body>
 </html>
