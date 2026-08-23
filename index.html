@@ -176,7 +176,7 @@
                 '. Task: Evaluate the practical feasibility of the decision. Introduce realistic technical and management constraints (e.g. operator confidence with speeds/feeds, tool deflection, Ra surface finish variations, swarf clearance, regrinding downtime). Output 70-90 words scenario for today, and update the progress percentage (0 to 100) toward each of the 3 aims.' +
                 ' FORMAT STRICTLY AS JSON: {"scenario":"...","aim1_progress":10,"aim2_progress":5,"aim3_progress":0}';
 
-            const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + key;
+            const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + key;
 
             let response;
             for (let attempt = 1; attempt <= 3; attempt++) {
