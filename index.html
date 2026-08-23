@@ -163,7 +163,7 @@
             }
         }
 
-        async function callAI(lastDecision, retries = 3) {
+        async function callAI(lastDecision) {
             const prompt = 'You are a manufacturing simulation engine evaluating a Level 3 engineering project over 8 weeks (40 working days).' +
                 ' Project: ' + pTitle +
                 ' | Proposed Solution: ' + pSolution +
@@ -176,63 +176,46 @@
                 '. Task: Evaluate the practical feasibility of the decision. Introduce realistic technical and management constraints (e.g. operator confidence with speeds/feeds, tool deflection, Ra surface finish variations, swarf clearance, regrinding downtime). Output 70-90 words scenario for today, and update the progress percentage (0 to 100) toward each of the 3 aims.' +
                 ' FORMAT STRICTLY AS JSON: {"scenario":"...","aim1_progress":10,"aim2_progress":5,"aim3_progress":0}';
 
-            const models = [
-                "gemini-2.5-flash",
-                "gemini-2.5-flash-lite",
-                "gemini-3-flash"
-            ];
+            const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + key;
 
-            let lastError = null;
+            let response;
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
 
-            for (let m = 0; m < models.length; m++) {
-                const modelName = models[m];
-                const url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + key;
-
-                for (let attempt = 0; attempt < retries; attempt++) {
-                    try {
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                        });
-
-                        if (response.status === 503 || response.status === 429) {
-                            toggleLoading(true, "Server busy, retrying in 2s (Attempt " + (attempt + 1) + ")...");
-                            await new Promise(r => setTimeout(r, 2000));
-                            continue;
-                        }
-
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.error ? errorData.error.message : ("HTTP " + response.status));
-                        }
-
-                        const data = await response.json();
-                        let textResult = data.candidates[0].content.parts[0].text;
-                        textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
-                        const resultObj = JSON.parse(textResult);
-
-                        document.getElementById('scenario-text').innerText = resultObj.scenario;
-                        
-                        const a1Val = Math.min(100, Math.max(0, resultObj.aim1_progress || 0));
-                        const a2Val = Math.min(100, Math.max(0, resultObj.aim2_progress || 0));
-                        const a3Val = Math.min(100, Math.max(0, resultObj.aim3_progress || 0));
-
-                        document.getElementById('bar-aim1').style.width = a1Val + '%';
-                        document.getElementById('bar-aim1').innerText = a1Val + '%';
-                        document.getElementById('bar-aim2').style.width = a2Val + '%';
-                        document.getElementById('bar-aim2').innerText = a2Val + '%';
-                        document.getElementById('bar-aim3').style.width = a3Val + '%';
-                        document.getElementById('bar-aim3').innerText = a3Val + '%';
-
-                        return; 
-                    } catch (err) {
-                        lastError = err;
-                    }
+                if (response.status === 503 || response.status === 429) {
+                    toggleLoading(true, "Server busy, retrying in 2s (Attempt " + attempt + " of 3)...");
+                    await new Promise(r => setTimeout(r, 2000));
+                    continue;
                 }
+                break;
             }
 
-            throw new Error(lastError ? lastError.message : "Connection failed across all endpoints.");
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error ? errorData.error.message : ("HTTP " + response.status));
+            }
+
+            const data = await response.json();
+            let textResult = data.candidates[0].content.parts[0].text;
+            textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+            const resultObj = JSON.parse(textResult);
+
+            document.getElementById('scenario-text').innerText = resultObj.scenario;
+            
+            const a1Val = Math.min(100, Math.max(0, resultObj.aim1_progress || 0));
+            const a2Val = Math.min(100, Math.max(0, resultObj.aim2_progress || 0));
+            const a3Val = Math.min(100, Math.max(0, resultObj.aim3_progress || 0));
+
+            document.getElementById('bar-aim1').style.width = a1Val + '%';
+            document.getElementById('bar-aim1').innerText = a1Val + '%';
+            document.getElementById('bar-aim2').style.width = a2Val + '%';
+            document.getElementById('bar-aim2').innerText = a2Val + '%';
+            document.getElementById('bar-aim3').style.width = a3Val + '%';
+            document.getElementById('bar-aim3').innerText = a3Val + '%';
         }
     </script>
 </body>
