@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engineering Sim</title>
+    <title>Engineering Sim V4</title>
     
     <script>
         window.onerror = function(msg, url, line) {
@@ -27,7 +27,7 @@
 <body>
 
     <div id="setup-screen" class="card">
-        <h2>Setup</h2>
+        <h2>Setup V4</h2>
         <label>AI API Key:</label>
         <input type="password" id="apiKey">
         <label>Project Title:</label>
@@ -129,8 +129,8 @@
         async function callAI(lastDecision) {
             const prompt = 'Project: ' + pTitle + '. Solution: ' + pSolution + '. Aims: ' + a1 + ', ' + a2 + ', ' + a3 + '. History: ' + historyContext + ' Day: ' + day + ' of 40. Action: ' + lastDecision + '. Task: Evaluate action, generate 80-word scenario, output aim percentages (0-100). FORMAT STRICTLY AS JSON: {"scenario":"text","aim1_progress":10,"aim2_progress":5,"aim3_progress":0}';
             
-            // Note the new "-latest" tag added to the model name here
-            const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" + key;
+            // The model is now pointing to the specific, active 002 version
+            const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=" + key;
             
             const response = await fetch(url, {
                 method: 'POST',
@@ -162,6 +162,9 @@
                 throw new Error("Data Parsing Error:\nThe AI did not return valid project data.\n" + jsonError.message);
             }
         }
+
+        // The ultimate cache-busting proof
+        alert("Engine Version 4.0 is ready!");
     </script>
 </body>
 </html>
