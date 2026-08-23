@@ -3,28 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engineering Project Simulation</title>
+    <title>Level 3 Engineering Project Simulator</title>
     
     <script>
         window.onerror = function(msg, url, line) {
-            alert("CRASH ON LINE " + line + ":\n" + msg);
+            alert("Crash on line " + line + ":\n" + msg);
             return true; 
         };
     </script>
 
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f4f9; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; padding-bottom: 120px; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h1, h2, h3 { margin-top: 0; color: #1a1a1a; }
-        label { font-weight: bold; display: block; margin-top: 15px; font-size: 0.9em; }
-        input[type="text"], input[type="password"], textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
-        button { background: #0066cc; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; }
-        button:disabled { background: #88aacc; cursor: not-allowed; }
-        .progress-container { margin-top: 15px; }
-        .progress-bar-bg { background: #e0e0e0; border-radius: 8px; height: 22px; width: 100%; overflow: hidden; margin-top: 5px; }
-        .progress-bar-fill { background: #28a745; height: 100%; transition: width 0.5s ease; width: 0%; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; color: white; font-size: 12px; font-weight: bold; box-sizing: border-box; }
-        #scenario-text { font-style: normal; background: #f9f9f9; border-left: 4px solid #0066cc; padding: 15px; margin: 20px 0; border-radius: 0 6px 6px 0; line-height: 1.5; font-size: 15px; }
-        .loading { display: none; text-align: center; color: #0066cc; font-weight: bold; margin-top: 12px; font-size: 14px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #eef2f7; padding: 15px; color: #222; max-width: 650px; margin: 0 auto; padding-bottom: 120px; line-height: 1.4; }
+        .card { background: white; padding: 18px; border-radius: 12px; box-shadow: 0 3px 8px rgba(0,0,0,0.08); margin-bottom: 16px; }
+        h1, h2, h3 { margin-top: 0; color: #111; }
+        label { font-weight: 700; display: block; margin-top: 12px; font-size: 0.85em; color: #444; text-transform: uppercase; letter-spacing: 0.5px; }
+        input[type="text"], input[type="password"], textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 14px; background: #fff; }
+        input:focus, textarea:focus { border-color: #0284c7; outline: none; }
+        button { background: #0284c7; color: white; border: none; padding: 12px 18px; border-radius: 8px; font-size: 1em; font-weight: bold; cursor: pointer; width: 100%; margin-top: 18px; transition: background 0.2s ease; }
+        button:hover { background: #0369a1; }
+        button:disabled { background: #94a3b8; cursor: not-allowed; }
+        
+        /* Metric Cards Grid */
+        .metrics-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
+        .metric-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; }
+        .metric-title { font-weight: 700; font-size: 0.9em; color: #1e293b; margin-bottom: 4px; }
+        .metric-values { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.85em; color: #64748b; }
+        .metric-current { font-size: 1.15em; font-weight: bold; color: #0284c7; }
+        .metric-status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75em; font-weight: bold; }
+        .status-on-track { background: #dcfce7; color: #166534; }
+        .status-behind { background: #fee2e2; color: #991b1b; }
+
+        /* Scenario Box Formatting */
+        .scenario-box { background: #ffffff; border-left: 5px solid #0284c7; padding: 16px; margin: 18px 0; border-radius: 4px 8px 8px 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .scenario-section-title { font-weight: bold; color: #0f172a; margin-top: 10px; margin-bottom: 4px; display: block; font-size: 0.95em; }
+        .scenario-section-title:first-child { margin-top: 0; }
+        .scenario-text { color: #334155; font-size: 14px; margin-bottom: 8px; }
+        .prompt-box { background: #eff6ff; border: 1px dashed #3b82f6; border-radius: 6px; padding: 10px; margin-top: 10px; color: #1e40af; font-size: 13.5px; }
+        .loading { display: none; text-align: center; color: #0284c7; font-weight: bold; margin-top: 12px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -32,54 +47,82 @@
     <!-- SETUP SCREEN -->
     <div id="setup-screen" class="card">
         <h2>Engineering Project Setup</h2>
-        <p>Define your Level 3 project aims and enter your API key to initialize the 8-week simulation.</p>
+        <p style="font-size: 0.9em; color: #64748b;">Configure your workshop improvement parameters to launch the 40-day (8-week) interactive simulation.</p>
         
-        <label>AI API Key (Gemini):</label>
+        <label>Gemini API Key</label>
         <input type="password" id="apiKey" placeholder="AIzaSy...">
 
-        <label>Project Title:</label>
+        <label>Project Title</label>
         <input type="text" id="projectTitle" value="Improve Step Shaft Production">
 
-        <label>Proposed Solution:</label>
-        <textarea id="solution" rows="3">Replace HSS tooling with carbide tipped tooling on 15 lathes and deliver toolbox talks on speeds/feeds.</textarea>
+        <label>Proposed Improvement Solution</label>
+        <textarea id="solution" rows="2">Replace HSS tooling with carbide tipped tooling across 15 manual lathes and train operators on proper speeds and feeds.</textarea>
 
-        <label>Aim 1 (e.g., Production Time):</label>
-        <input type="text" id="aim1Desc" value="Reduce Production Time to Produce one stepped shaft by 20%">
+        <label>Aim 1 (Cycle Time)</label>
+        <input type="text" id="aim1Desc" value="Reduce average step shaft production time by 20%">
 
-        <label>Aim 2 (e.g., Surface Finish Quality):</label>
-        <input type="text" id="aim2Desc" value="Reduce Number of Components with Surface Finish above Ra1.6 by 10%">
+        <label>Aim 2 (Quality & Finish)</label>
+        <input type="text" id="aim2Desc" value="Reduce components exceeding Ra 1.6 surface roughness by 10%">
 
-        <label>Aim 3 (e.g., Tool Regrinding):</label>
-        <input type="text" id="aim3Desc" value="Reduce Time Due to Regrinding Tools to 0%">
+        <label>Aim 3 (Tooling Downtime)</label>
+        <input type="text" id="aim3Desc" value="Reduce shift time lost to regrinding tools down to 0%">
 
         <button id="start-btn" onclick="startSimulation()">Start Simulation</button>
-        <div id="setup-loading" class="loading">Connecting to simulation engine...</div>
+        <div id="setup-loading" class="loading">Setting up shop floor baseline...</div>
     </div>
 
     <!-- SIMULATION SCREEN -->
     <div id="sim-screen" class="card" style="display:none;">
-        <h2 id="day-counter">Week 1 — Day 1 of 40</h2>
+        <h2 id="day-counter" style="margin-bottom: 5px;">Week 1 — Day 1 of 40</h2>
         
-        <div class="progress-container">
-            <label id="lbl-aim1">Aim 1</label>
-            <div class="progress-bar-bg"><div id="bar-aim1" class="progress-bar-fill">0%</div></div>
-            
-            <label id="lbl-aim2">Aim 2</label>
-            <div class="progress-bar-bg"><div id="bar-aim2" class="progress-bar-fill">0%</div></div>
-            
-            <label id="lbl-aim3">Aim 3</label>
-            <div class="progress-bar-bg"><div id="bar-aim3" class="progress-bar-fill">0%</div></div>
+        <div class="metrics-grid">
+            <!-- Aim 1 Card -->
+            <div class="metric-card">
+                <div class="metric-title" id="lbl-aim1">Aim 1: Cycle Time</div>
+                <div class="metric-values">
+                    <span>Baseline: <strong id="a1-base">--</strong></span>
+                    <span>Current: <span id="a1-cur" class="metric-current">--</span></span>
+                    <span>Target: <strong id="a1-tar">--</strong></span>
+                </div>
+                <div style="margin-top:6px;"><span id="a1-status" class="metric-status status-behind">Tracking</span></div>
+            </div>
+
+            <!-- Aim 2 Card -->
+            <div class="metric-card">
+                <div class="metric-title" id="lbl-aim2">Aim 2: Surface Finish Defects</div>
+                <div class="metric-values">
+                    <span>Baseline: <strong id="a2-base">--</strong></span>
+                    <span>Current: <span id="a2-cur" class="metric-current">--</span></span>
+                    <span>Target: <strong id="a2-tar">--</strong></span>
+                </div>
+                <div style="margin-top:6px;"><span id="a2-status" class="metric-status status-behind">Tracking</span></div>
+            </div>
+
+            <!-- Aim 3 Card -->
+            <div class="metric-card">
+                <div class="metric-title" id="lbl-aim3">Aim 3: Regrind Downtime</div>
+                <div class="metric-values">
+                    <span>Baseline: <strong id="a3-base">--</strong></span>
+                    <span>Current: <span id="a3-cur" class="metric-current">--</span></span>
+                    <span>Target: <strong id="a3-tar">--</strong></span>
+                </div>
+                <div style="margin-top:6px;"><span id="a3-status" class="metric-status status-behind">Tracking</span></div>
+            </div>
         </div>
 
-        <div id="scenario-text">
-            Initializing baseline parameters...
+        <div id="scenario-box" class="scenario-box">
+            <span class="scenario-section-title">Workshop Update:</span>
+            <div id="scn-update" class="scenario-text">Gathering initial workshop baseline...</div>
+
+            <span class="scenario-section-title">Tutor Guidance & Suggested Problem Solving:</span>
+            <div id="scn-prompt" class="prompt-box">Analyzing initial project setup...</div>
         </div>
 
-        <label>Your Decision / Corrective Action:</label>
-        <textarea id="user-decision" rows="3" placeholder="Enter practical workshop actions (e.g., Check tool center height, deliver speed/feed toolbox talk, inspect coolant flow)..."></textarea>
+        <label>Your Action / Decision for Today:</label>
+        <textarea id="user-decision" rows="3" placeholder="What practical action will you take on the shop floor today? (e.g., Hold 5-minute toolbox talk, trial 1 lathe at 450 RPM, inspect tool height with centre gauge)..."></textarea>
 
         <button id="execute-btn" onclick="submitDecision()">Execute Decision</button>
-        <div id="sim-loading" class="loading">Simulating workshop feedback...</div>
+        <div id="sim-loading" class="loading">Simulating shop floor reaction...</div>
     </div>
 
     <script>
@@ -110,7 +153,7 @@
             try {
                 key = document.getElementById('apiKey').value.trim();
                 if (!key) { 
-                    alert("Please enter your API key."); 
+                    alert("Please enter your Gemini API key."); 
                     return; 
                 }
 
@@ -124,11 +167,11 @@
                 document.getElementById('lbl-aim2').innerText = a2;
                 document.getElementById('lbl-aim3').innerText = a3;
 
-                toggleLoading(true, "Gathering Day 1 baseline workshop metrics...");
+                toggleLoading(true, "Measuring Day 1 baseline shop floor values...");
                 document.getElementById('setup-screen').style.display = 'none';
                 document.getElementById('sim-screen').style.display = 'block';
 
-                await callAI("Baseline establishment: Initial tool condition and initial cycle times before carbide tooling arrival.");
+                await callAI("Baseline Day 1. Set initial baseline values for all three aims and deliver the initial situation on the shop floor.");
             } catch (error) {
                 alert("Setup failed: " + error.message);
                 document.getElementById('setup-screen').style.display = 'block';
@@ -142,12 +185,12 @@
             const decisionInput = document.getElementById('user-decision');
             const decision = decisionInput.value.trim();
             if (!decision) { 
-                alert("Please enter a decision or action before proceeding."); 
+                alert("Please enter an action or decision first."); 
                 return; 
             }
 
             try {
-                toggleLoading(true, "Evaluating workshop implementation...");
+                toggleLoading(true, "Simulating shop floor reaction...");
                 historyContext += "Day " + day + " Decision: " + decision + ". ";
                 day++;
                 updateDayLabel(day);
@@ -164,17 +207,29 @@
         }
 
         async function callAI(lastDecision) {
-            const prompt = 'You are a manufacturing simulation engine evaluating a Level 3 engineering project over 8 weeks (40 working days).' +
+            const prompt = 'You are an engineering tutor and workshop simulator helping Level 3 machining apprentices with their quality/productivity project.' +
                 ' Project: ' + pTitle +
-                ' | Proposed Solution: ' + pSolution +
+                ' | Solution: ' + pSolution +
                 ' | Aim 1: ' + a1 +
                 ' | Aim 2: ' + a2 +
                 ' | Aim 3: ' + a3 +
                 ' | History: ' + historyContext +
-                ' | Current Day: ' + day + ' of 40.' +
-                ' | Latest Action: ' + lastDecision +
-                '. Task: Evaluate the practical feasibility of the decision. Introduce realistic technical and management constraints (e.g. operator confidence with speeds/feeds, tool deflection, Ra surface finish variations, swarf clearance, regrinding downtime). Output 70-90 words scenario for today, and update the progress percentage (0 to 100) toward each of the 3 aims.' +
-                ' FORMAT STRICTLY AS JSON: {"scenario":"...","aim1_progress":10,"aim2_progress":5,"aim3_progress":0}';
+                ' | Day: ' + day + ' of 40 (Week ' + Math.ceil(day/5) + ').' +
+                ' | Learner Action Today: ' + lastDecision +
+                '.\n\n' +
+                'RULES FOR OUTPUT:' +
+                '1. Use simple, clear, engaging language suited for engineering learners (avoid dense academic phrasing).' +
+                '2. Provide actual engineering numbers with units for all 3 aims: (e.g. Aim 1: "25 mins", Aim 2: "18% > Ra1.6", Aim 3: "15% of shift lost to grinding").' +
+                '3. If today is Day 1, invent realistic baseline figures and sensible targets for the project.' +
+                '4. In "tutor_prompt", evaluate if the metrics are on track. If progress is slipping or stagnant, directly prompt the apprentice to take corrective action and suggest practical problem-solving methods (e.g. 5 Whys root cause analysis, Ishikawa/fishbone diagrams, standard operating procedures (SOP), speed/feed calculations, sample batch testing, or tool height checks).' +
+                '\n\nSTRICT JSON FORMAT REQUIRED:' +
+                '{\n' +
+                '  "workshop_update": "Clear 2-3 sentence summary of what happened on the shop floor today in plain language.",\n' +
+                '  "tutor_prompt": "Friendly coaching advice: Are we meeting targets? Suggest a problem solving technique or next practical step.",\n' +
+                '  "aim1": {"baseline": "25 mins", "current": "24 mins", "target": "20 mins", "status": "On Track"},\n' +
+                '  "aim2": {"baseline": "18% defect", "current": "17% defect", "target": "8% defect", "status": "Behind"},\n' +
+                '  "aim3": {"baseline": "15% shift", "current": "12% shift", "target": "0% shift", "status": "On Track"}\n' +
+                '}';
 
             const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + key;
 
@@ -187,7 +242,7 @@
                 });
 
                 if (response.status === 503 || response.status === 429) {
-                    toggleLoading(true, "Server busy, retrying in 2s (Attempt " + attempt + " of 3)...");
+                    toggleLoading(true, "Server busy, retrying in 2s (Attempt " + attempt + ")...");
                     await new Promise(r => setTimeout(r, 2000));
                     continue;
                 }
@@ -202,20 +257,39 @@
             const data = await response.json();
             let textResult = data.candidates[0].content.parts[0].text;
             textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
-            const resultObj = JSON.parse(textResult);
+            const res = JSON.parse(textResult);
 
-            document.getElementById('scenario-text').innerText = resultObj.scenario;
-            
-            const a1Val = Math.min(100, Math.max(0, resultObj.aim1_progress || 0));
-            const a2Val = Math.min(100, Math.max(0, resultObj.aim2_progress || 0));
-            const a3Val = Math.min(100, Math.max(0, resultObj.aim3_progress || 0));
+            // Update Text Sections
+            document.getElementById('scn-update').innerText = res.workshop_update;
+            document.getElementById('scn-prompt').innerText = res.tutor_prompt;
 
-            document.getElementById('bar-aim1').style.width = a1Val + '%';
-            document.getElementById('bar-aim1').innerText = a1Val + '%';
-            document.getElementById('bar-aim2').style.width = a2Val + '%';
-            document.getElementById('bar-aim2').innerText = a2Val + '%';
-            document.getElementById('bar-aim3').style.width = a3Val + '%';
-            document.getElementById('bar-aim3').innerText = a3Val + '%';
+            // Update Aim 1
+            document.getElementById('a1-base').innerText = res.aim1.baseline;
+            document.getElementById('a1-cur').innerText = res.aim1.current;
+            document.getElementById('a1-tar').innerText = res.aim1.target;
+            updateStatusTag('a1-status', res.aim1.status);
+
+            // Update Aim 2
+            document.getElementById('a2-base').innerText = res.aim2.baseline;
+            document.getElementById('a2-cur').innerText = res.aim2.current;
+            document.getElementById('a2-tar').innerText = res.aim2.target;
+            updateStatusTag('a2-status', res.aim2.status);
+
+            // Update Aim 3
+            document.getElementById('a3-base').innerText = res.aim3.baseline;
+            document.getElementById('a3-cur').innerText = res.aim3.current;
+            document.getElementById('a3-tar').innerText = res.aim3.target;
+            updateStatusTag('a3-status', res.aim3.status);
+        }
+
+        function updateStatusTag(elementId, statusText) {
+            const el = document.getElementById(elementId);
+            el.innerText = statusText;
+            if (statusText.toLowerCase().includes("on track") || statusText.toLowerCase().includes("achieved")) {
+                el.className = "metric-status status-on-track";
+            } else {
+                el.className = "metric-status status-behind";
+            }
         }
     </script>
 </body>
