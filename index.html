@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engineering Sim V5</title>
+    <title>Engineering Project Simulation</title>
     
     <script>
         window.onerror = function(msg, url, line) {
@@ -13,89 +13,124 @@
     </script>
 
     <style>
-        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; padding-bottom: 150px; }
-        .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        input, textarea, button { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; }
-        button { background: #0066cc; color: white; border: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        .progress-bar-bg { background: #e0e0e0; height: 20px; width: 100%; margin-top: 5px; }
-        .progress-bar-fill { background: #28a745; height: 100%; width: 0%; color: white; text-align: right; font-size: 12px; }
-        #scenario-text { font-style: italic; background: #f9f9f9; padding: 15px; margin: 20px 0; border-left: 4px solid #0066cc; line-height: 1.5; }
-        .loading { display: none; text-align: center; color: #0066cc; font-weight: bold; margin-top: 10px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f4f9; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; padding-bottom: 120px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1, h2, h3 { margin-top: 0; color: #1a1a1a; }
+        label { font-weight: bold; display: block; margin-top: 15px; font-size: 0.9em; }
+        input[type="text"], input[type="password"], textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+        button { background: #0066cc; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; }
+        button:disabled { background: #88aacc; cursor: not-allowed; }
+        .progress-container { margin-top: 15px; }
+        .progress-bar-bg { background: #e0e0e0; border-radius: 8px; height: 22px; width: 100%; overflow: hidden; margin-top: 5px; }
+        .progress-bar-fill { background: #28a745; height: 100%; transition: width 0.5s ease; width: 0%; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; color: white; font-size: 12px; font-weight: bold; box-sizing: border-box; }
+        #scenario-text { font-style: normal; background: #f9f9f9; border-left: 4px solid #0066cc; padding: 15px; margin: 20px 0; border-radius: 0 6px 6px 0; line-height: 1.5; font-size: 15px; }
+        .loading { display: none; text-align: center; color: #0066cc; font-weight: bold; margin-top: 12px; font-size: 14px; }
     </style>
 </head>
 <body>
 
+    <!-- SETUP SCREEN -->
     <div id="setup-screen" class="card">
-        <h2>Setup V5</h2>
-        <label>AI API Key:</label>
-        <input type="password" id="apiKey">
+        <h2>Engineering Project Setup</h2>
+        <p>Define your Level 3 project aims and enter your API key to initialize the 8-week simulation.</p>
+        
+        <label>AI API Key (Gemini):</label>
+        <input type="password" id="apiKey" placeholder="AIzaSy...">
+
         <label>Project Title:</label>
         <input type="text" id="projectTitle" value="Improve Step Shaft Production">
-        <label>Solution:</label>
-        <textarea id="solution">Replace HSS tooling with carbide.</textarea>
-        <label>Aim 1:</label>
-        <input type="text" id="aim1Desc" value="Reduce Production Time by 20%">
-        <label>Aim 2:</label>
-        <input type="text" id="aim2Desc" value="Reduce components > 1.6Ra by 10%">
-        <label>Aim 3:</label>
-        <input type="text" id="aim3Desc" value="Reduce time due to regrinding to 0%">
+
+        <label>Proposed Solution:</label>
+        <textarea id="solution" rows="3">Replace HSS tooling with carbide tipped tooling on 15 lathes and deliver toolbox talks on speeds/feeds.</textarea>
+
+        <label>Aim 1 (e.g., Production Time):</label>
+        <input type="text" id="aim1Desc" value="Reduce Production Time to Produce one stepped shaft by 20%">
+
+        <label>Aim 2 (e.g., Surface Finish Quality):</label>
+        <input type="text" id="aim2Desc" value="Reduce Number of Components with Surface Finish above Ra1.6 by 10%">
+
+        <label>Aim 3 (e.g., Tool Regrinding):</label>
+        <input type="text" id="aim3Desc" value="Reduce Time Due to Regrinding Tools to 0%">
+
         <button id="start-btn" onclick="startSimulation()">Start Simulation</button>
-        <div id="setup-loading" class="loading">Connecting to workshop AI...</div>
+        <div id="setup-loading" class="loading">Connecting to simulation engine...</div>
     </div>
 
+    <!-- SIMULATION SCREEN -->
     <div id="sim-screen" class="card" style="display:none;">
-        <h2 id="day-counter">Day 1 of 40</h2>
-        <label id="lbl-aim1">Aim 1</label><div class="progress-bar-bg"><div id="bar-aim1" class="progress-bar-fill">0%</div></div>
-        <label id="lbl-aim2">Aim 2</label><div class="progress-bar-bg"><div id="bar-aim2" class="progress-bar-fill">0%</div></div>
-        <label id="lbl-aim3">Aim 3</label><div class="progress-bar-bg"><div id="bar-aim3" class="progress-bar-fill">0%</div></div>
-        <div id="scenario-text">Starting...</div>
-        <textarea id="user-decision" placeholder="Your action..."></textarea>
+        <h2 id="day-counter">Week 1 — Day 1 of 40</h2>
+        
+        <div class="progress-container">
+            <label id="lbl-aim1">Aim 1</label>
+            <div class="progress-bar-bg"><div id="bar-aim1" class="progress-bar-fill">0%</div></div>
+            
+            <label id="lbl-aim2">Aim 2</label>
+            <div class="progress-bar-bg"><div id="bar-aim2" class="progress-bar-fill">0%</div></div>
+            
+            <label id="lbl-aim3">Aim 3</label>
+            <div class="progress-bar-bg"><div id="bar-aim3" class="progress-bar-fill">0%</div></div>
+        </div>
+
+        <div id="scenario-text">
+            Initializing baseline parameters...
+        </div>
+
+        <label>Your Decision / Corrective Action:</label>
+        <textarea id="user-decision" rows="3" placeholder="Enter practical workshop actions (e.g., Check tool center height, deliver speed/feed toolbox talk, inspect coolant flow)..."></textarea>
+
         <button id="execute-btn" onclick="submitDecision()">Execute Decision</button>
         <div id="sim-loading" class="loading">Simulating workshop feedback...</div>
     </div>
 
     <script>
-        let day = 1; let pTitle, pSolution, a1, a2, a3, key; let historyContext = "";
+        let day = 1;
+        let pTitle, pSolution, a1, a2, a3, key;
+        let historyContext = "";
 
-        function toggleLoading(isLoading) {
-            document.getElementById('setup-loading').style.display = isLoading ? 'block' : 'none';
-            document.getElementById('sim-loading').style.display = isLoading ? 'block' : 'none';
+        function updateDayLabel(dayNum) {
+            const weekNum = Math.ceil(dayNum / 5);
+            const dayOfWeek = ((dayNum - 1) % 5) + 1;
+            document.getElementById('day-counter').innerText = 'Week ' + weekNum + ' (Day ' + dayOfWeek + ') — Day ' + dayNum + ' of 40';
+        }
+
+        function toggleLoading(isLoading, message) {
+            const setupLoad = document.getElementById('setup-loading');
+            const simLoad = document.getElementById('sim-loading');
+            if (message) {
+                setupLoad.innerText = message;
+                simLoad.innerText = message;
+            }
+            setupLoad.style.display = isLoading ? 'block' : 'none';
+            simLoad.style.display = isLoading ? 'block' : 'none';
             document.getElementById('start-btn').disabled = isLoading;
             document.getElementById('execute-btn').disabled = isLoading;
-            if (isLoading) {
-                document.getElementById('start-btn').innerText = "Working...";
-                document.getElementById('execute-btn').innerText = "Simulating...";
-            } else {
-                document.getElementById('start-btn').innerText = "Start Simulation";
-                document.getElementById('execute-btn').innerText = "Execute Decision";
-            }
         }
 
         async function startSimulation() {
             try {
-                key = document.getElementById('apiKey').value;
-                if (!key) { alert("Please enter your API key."); return; }
-                
-                toggleLoading(true);
+                key = document.getElementById('apiKey').value.trim();
+                if (!key) { 
+                    alert("Please enter your API key."); 
+                    return; 
+                }
 
                 pTitle = document.getElementById('projectTitle').value;
                 pSolution = document.getElementById('solution').value;
                 a1 = document.getElementById('aim1Desc').value;
                 a2 = document.getElementById('aim2Desc').value;
                 a3 = document.getElementById('aim3Desc').value;
-                
+
                 document.getElementById('lbl-aim1').innerText = a1;
                 document.getElementById('lbl-aim2').innerText = a2;
                 document.getElementById('lbl-aim3').innerText = a3;
-                
+
+                toggleLoading(true, "Gathering Day 1 baseline workshop metrics...");
                 document.getElementById('setup-screen').style.display = 'none';
                 document.getElementById('sim-screen').style.display = 'block';
 
-                await callAI("Initial baseline."); 
-            
+                await callAI("Baseline establishment: Initial tool condition and initial cycle times before carbide tooling arrival.");
             } catch (error) {
-                alert("Setup failed to contact AI:\n" + error.message);
+                alert("Setup failed: " + error.message);
                 document.getElementById('setup-screen').style.display = 'block';
                 document.getElementById('sim-screen').style.display = 'none';
             } finally {
@@ -104,67 +139,101 @@
         }
 
         async function submitDecision() {
-            try {
-                const decisionInput = document.getElementById('user-decision');
-                const decision = decisionInput.value;
-                if (!decision) { alert("Please enter a decision first."); return; }
-                
-                toggleLoading(true);
+            const decisionInput = document.getElementById('user-decision');
+            const decision = decisionInput.value.trim();
+            if (!decision) { 
+                alert("Please enter a decision or action before proceeding."); 
+                return; 
+            }
 
-                historyContext += "Day " + day + " decision: " + decision + ". ";
+            try {
+                toggleLoading(true, "Evaluating workshop implementation...");
+                historyContext += "Day " + day + " Decision: " + decision + ". ";
                 day++;
-                document.getElementById('day-counter').innerText = "Day " + day + " of 40";
-                
-                await callAI(decision); 
-                
-                decisionInput.value = ""; 
-            
+                updateDayLabel(day);
+
+                await callAI(decision);
+                decisionInput.value = "";
             } catch (error) {
-                alert("Simulation call failed:\n" + error.message);
+                alert("Simulation Error: " + error.message);
+                day--;
+                updateDayLabel(day);
             } finally {
                 toggleLoading(false);
             }
         }
 
-        async function callAI(lastDecision) {
-            const prompt = 'Project: ' + pTitle + '. Solution: ' + pSolution + '. Aims: ' + a1 + ', ' + a2 + ', ' + a3 + '. History: ' + historyContext + ' Day: ' + day + ' of 40. Action: ' + lastDecision + '. Task: Evaluate action, generate 80-word scenario, output aim percentages (0-100). FORMAT STRICTLY AS JSON: {"scenario":"text","aim1_progress":10,"aim2_progress":5,"aim3_progress":0}';
-            
-            // The endpoint now uses the modern, active gemini-3.7-flash model
-            const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=" + key;
-            
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error("Gemini API Error (HTTP " + response.status + "): " + errorData.error.message);
+        async function callAI(lastDecision, retries = 3) {
+            const prompt = 'You are a manufacturing simulation engine evaluating a Level 3 engineering project over 8 weeks (40 working days).' +
+                ' Project: ' + pTitle +
+                ' | Proposed Solution: ' + pSolution +
+                ' | Aim 1: ' + a1 +
+                ' | Aim 2: ' + a2 +
+                ' | Aim 3: ' + a3 +
+                ' | History: ' + historyContext +
+                ' | Current Day: ' + day + ' of 40.' +
+                ' | Latest Action: ' + lastDecision +
+                '. Task: Evaluate the practical feasibility of the decision. Introduce realistic technical and management constraints (e.g. operator confidence with speeds/feeds, tool deflection, Ra surface finish variations, swarf clearance, regrinding downtime). Output 70-90 words scenario for today, and update the progress percentage (0 to 100) toward each of the 3 aims.' +
+                ' FORMAT STRICTLY AS JSON: {"scenario":"...","aim1_progress":10,"aim2_progress":5,"aim3_progress":0}';
+
+            const models = [
+                "gemini-2.5-flash",
+                "gemini-2.5-flash-lite",
+                "gemini-3-flash"
+            ];
+
+            let lastError = null;
+
+            for (let m = 0; m < models.length; m++) {
+                const modelName = models[m];
+                const url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + key;
+
+                for (let attempt = 0; attempt < retries; attempt++) {
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                        });
+
+                        if (response.status === 503 || response.status === 429) {
+                            toggleLoading(true, "Server busy, retrying in 2s (Attempt " + (attempt + 1) + ")...");
+                            await new Promise(r => setTimeout(r, 2000));
+                            continue;
+                        }
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error ? errorData.error.message : ("HTTP " + response.status));
+                        }
+
+                        const data = await response.json();
+                        let textResult = data.candidates[0].content.parts[0].text;
+                        textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+                        const resultObj = JSON.parse(textResult);
+
+                        document.getElementById('scenario-text').innerText = resultObj.scenario;
+                        
+                        const a1Val = Math.min(100, Math.max(0, resultObj.aim1_progress || 0));
+                        const a2Val = Math.min(100, Math.max(0, resultObj.aim2_progress || 0));
+                        const a3Val = Math.min(100, Math.max(0, resultObj.aim3_progress || 0));
+
+                        document.getElementById('bar-aim1').style.width = a1Val + '%';
+                        document.getElementById('bar-aim1').innerText = a1Val + '%';
+                        document.getElementById('bar-aim2').style.width = a2Val + '%';
+                        document.getElementById('bar-aim2').innerText = a2Val + '%';
+                        document.getElementById('bar-aim3').style.width = a3Val + '%';
+                        document.getElementById('bar-aim3').innerText = a3Val + '%';
+
+                        return; 
+                    } catch (err) {
+                        lastError = err;
+                    }
+                }
             }
 
-            const data = await response.json();
-            
-            try {
-                let textResult = data.candidates[0].content.parts[0].text;
-                textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
-                const resultObj = JSON.parse(textResult);
-                
-                document.getElementById('scenario-text').innerText = resultObj.scenario;
-                document.getElementById('bar-aim1').style.width = resultObj.aim1_progress + '%';
-                document.getElementById('bar-aim1').innerText = resultObj.aim1_progress + '%';
-                document.getElementById('bar-aim2').style.width = resultObj.aim2_progress + '%';
-                document.getElementById('bar-aim2').innerText = resultObj.aim2_progress + '%';
-                document.getElementById('bar-aim3').style.width = resultObj.aim3_progress + '%';
-                document.getElementById('bar-aim3').innerText = resultObj.aim3_progress + '%';
-                
-            } catch (jsonError) {
-                throw new Error("Data Parsing Error:\nThe AI did not return valid project data.\n" + jsonError.message);
-            }
+            throw new Error(lastError ? lastError.message : "Connection failed across all endpoints.");
         }
-
-        // Cache-busting proof for V5
-        alert("Engine Version 5.0 is ready!");
     </script>
 </body>
 </html>
